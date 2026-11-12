@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#162d2c">
+<title>Colossal Steps — A Tiny Garden Adventure</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap');
+:root{color-scheme:dark;--ink:#f8f3dc;--mint:#a9e3b2;--gold:#ffdf86;--panel:rgba(22,45,43,.88)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{overflow:hidden;background:#162d2c;color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#game{position:relative;width:100%;height:100%;min-height:440px;overflow:hidden;background:radial-gradient(ellipse at 50% 46%,#3b7657 0%,#285743 50%,#193b37 100%)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;z-index:2;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:max(20px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.brand{display:flex;align-items:center;gap:12px}.logo{width:45px;height:45px;border-radius:15px;background:#ffe5a7;color:#314c3b;display:grid;place-items:center;font-size:23px;box-shadow:0 6px 0 #c99754}.brand h1{font:600 clamp(17px,2vw,24px) 'Fredoka',sans-serif;letter-spacing:.3px;margin:0}.brand p{margin:2px 0 0;color:#c5e1bd;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700}.stats{display:flex;gap:10px}.stat{min-width:94px;padding:10px 15px;border:1px solid #ffffff20;background:var(--panel);border-radius:16px;text-align:center;backdrop-filter:blur(8px)}.stat small{display:block;color:#a8c9a7;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;font-size:9px}.stat strong{font:600 23px 'Fredoka',sans-serif}.stat.timer strong{color:var(--gold)}
+.bottom{display:flex;justify-content:space-between;align-items:flex-end;color:#d4e5c7;font-size:12px}.hint{background:#193b35bd;border:1px solid #ffffff1a;border-radius:13px;padding:10px 14px;backdrop-filter:blur(6px)}.hint b{color:#fff3c9}.sound{pointer-events:auto;border:1px solid #ffffff33;background:#193b35dc;color:white;border-radius:12px;padding:10px 13px;font:700 12px 'DM Sans';cursor:pointer}
+.overlay{position:absolute;z-index:4;inset:0;display:grid;place-items:center;padding:20px;background:#10262262;backdrop-filter:blur(5px);transition:opacity .25s}.overlay.hidden{opacity:0;pointer-events:none}.card{width:min(440px,100%);background:linear-gradient(145deg,#244c40,#19362f);border:1px solid #c8efb831;border-radius:28px;padding:30px 34px 28px;text-align:center;box-shadow:0 22px 70px #081c1970, inset 0 1px #ffffff18}.eyebrow{font-size:10px;color:#b1e6a9;font-weight:800;letter-spacing:2px;text-transform:uppercase}.card h2{font:600 clamp(32px,7vw,46px)/.98 'Fredoka',sans-serif;margin:10px 0 12px;color:#fff4d5}.card p{color:#d1e4c9;font-size:14px;line-height:1.65;margin:0 auto 20px;max-width:330px}.how{display:flex;gap:8px;justify-content:center;margin:0 0 22px}.how span{font-size:11px;font-weight:700;padding:8px 10px;border-radius:10px;background:#ffffff0d;color:#d7e8d1}.key{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:6px;background:#fff0c8;color:#354b3c;font-size:11px;font-weight:800;box-shadow:0 2px #c7a969}.play{border:0;border-radius:14px;background:#ffdd82;color:#344b3b;font:700 16px 'Fredoka',sans-serif;padding:13px 28px;cursor:pointer;box-shadow:0 5px 0 #b58950;transition:transform .1s,box-shadow .1s}.play:active{transform:translateY(3px);box-shadow:0 2px 0 #b58950}.footnote{font-size:10px!important;color:#a9c5a5!important;margin:15px 0 0!important}
+#mobileControls{display:none;pointer-events:auto;position:absolute;z-index:3;bottom:max(26px,env(safe-area-inset-bottom));left:20px;right:20px;justify-content:space-between;align-items:flex-end}.pad{width:132px;height:132px;position:relative}.ctrl{position:absolute;width:43px;height:43px;border:1px solid #ffffff36;border-radius:13px;background:#173b33cc;color:white;font-size:18px;display:grid;place-items:center;touch-action:none;box-shadow:0 4px #102b27}.ctrl:active,.ctrl.on{background:#ffdf86;color:#314a39}.up{left:44px;top:0}.down{left:44px;bottom:0}.left{left:0;top:44px}.right{right:0;top:44px}.boost{position:relative;width:66px;height:66px;border-radius:50%;border:2px solid #fff2c577;background:#f9d775d9;color:#3b4d38;font:700 12px 'Fredoka';box-shadow:0 5px #b58b4f;touch-action:none}
+@media (pointer:coarse),(max-width:700px){.hud{padding: max(14px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom))}.logo{width:38px;height:38px}.brand{gap:8px}.brand p{font-size:9px}.stats{gap:6px}.stat{min-width:63px;padding:8px 10px;border-radius:13px}.stat strong{font-size:20px}.stat small{font-size:8px}.bottom{display:none}#mobileControls{display:flex}.card{padding:26px 22px}.how{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Colossal Steps game">
+<canvas id="scene"></canvas>
+<div class="hud">
+<header class="topbar"><div class="brand"><div class="logo">🌼</div><div><h1>COLOSSAL STEPS</h1><p>A tiny garden adventure</p></div></div><div class="stats"><div class="stat"><small>Fireflies</small><strong id="score">0 <span style="font-size:13px;color:#a8c9a7">/ 12</span></strong></div><div class="stat timer"><small>Time</small><strong id="time">60</strong></div></div></header>
+<div class="bottom"><div class="hint"><b>WASD</b> or <b>↑ ↓ ← →</b> to wander <span style="color:#84ba8e"> · </span><b>SPACE</b> to dash</div><button id="sound" class="sound">♪ Sound: On</button></div>
+</div>
+<div id="mobileControls"><div class="pad"><button class="ctrl up" data-dir="up">▲</button><button class="ctrl down" data-dir="down">▼</button><button class="ctrl left" data-dir="left">◀</button><button class="ctrl right" data-dir="right">▶</button></div><button class="boost" data-dir="boost">DASH ✦</button></div>
+<div id="overlay" class="overlay"><section class="card"><div class="eyebrow">A pocket-sized quest</div><h2 id="headline">A VERY<br>BIG ADVENTURE</h2><p id="copy">Wander through a miniature garden as a friendly giantess. Gather 12 glowing fireflies before they flutter away—and mind the flower patches!</p><div class="how"><span><i class="key">WASD</i> Move</span><span><i class="key">SPACE</i> Dash</span><span>✿ Avoid flowers</span></div><button id="play" class="play">Let's wander</button><p class="footnote">A cozy, no-stress garden game · Keyboard or touch</p></section></div>
+</main>
+<script>
+(()=>{
+const cvs=document.getElementById('scene'),ctx=cvs.getContext('2d'),game=document.getElementById('game');
+const scoreEl=document.getElementById('score'),timeEl=document.getElementById('time'),overlay=document.getElementById('overlay'),headline=document.getElementById('headline'),copy=document.getElementById('copy'),playBtn=document.getElementById('play'),soundBtn=document.getElementById('sound');
+let W=0,H=0,dpr=1,playing=false,won=false,score=0,time=60,last=0,elapsed=0,footstep=0,audioOn=true,audioCtx=null,shake=0;
+const keys={},touch={up:false,down:false,left:false,right:false,boost:false},player={x:0,y:0,vx:0,vy:0,face:0,dash:0,inv:0};
+let bugs=[],flowers=[],tufts=[],puffs=[];
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function resize(){const r=game.getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);cvs.width=Math.round(W*dpr);cvs.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);seedDecor();if(!playing){player.x=W/2;player.y=H*.56}}
+function seedDecor(){tufts=[];flowers=[];for(let i=0;i<Math.floor(W*H/1800);i++)tufts.push({x:rand(0,W),y:rand(0,H),s:rand(3,10),a:rand(-1,1)});}
+function makeBugs(n){bugs=[];for(let i=0;i<n;i++){let x,y;do{x=rand(45,W-45);y=rand(95,H-65)}while(Math.hypot(x-player.x,y-player.y)<140);bugs.push({x,y,phase:rand(0,7),r:rand(5,8),alive:true})}}
+function reset(){score=0;time=60;elapsed=0;player.x=W/2;player.y=H*.55;player.vx=player.vy=0;player.face=0;player.dash=0;player.inv=0;won=false;puffs=[];makeBugs(12);scoreEl.innerHTML='0 <span style="font-size:13px;color:#a8c9a7">/ 12</span>';timeEl.textContent='60'}
+function start(){reset();playing=true;overlay.classList.add('hidden');last=performance.now();requestAnimationFrame(loop);}
+function end(success){playing=false;won=success;headline.innerHTML=success?'GARDEN<br>GLOWING!':'TIME TO<br>TIPTOE HOME';copy.textContent=success?'You gathered all 12 fireflies and left every flower smiling. What a wonderfully big-hearted adventure!':`You found ${score} of 12 fireflies. The garden will be here for another stroll whenever you're ready.`;playBtn.textContent='Play again';overlay.classList.remove('hidden');}
+function sound(freq=420,dur=.08,type='sine'){if(!audioOn)return;try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.055,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function drawGround(){
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#427954');g.addColorStop(.52,'#34704e');g.addColorStop(1,'#25563f');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // soft winding path
+ ctx.save();ctx.globalAlpha=.38;ctx.strokeStyle='#c5b781';ctx.lineWidth=Math.min(W,H)*.17;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-50,H*.34);ctx.bezierCurveTo(W*.24,H*.18,W*.25,H*.83,W*.54,H*.64);ctx.bezierCurveTo(W*.72,H*.5,W*.75,H*.22,W+70,H*.38);ctx.stroke();ctx.globalAlpha=.24;ctx.strokeStyle='#e7d5a1';ctx.lineWidth=2;ctx.setLineDash([4,13]);ctx.stroke();ctx.restore();
+ // grass flecks
+ for(const t of tufts){ctx.save();ctx.translate(t.x,t.y);ctx.rotate(t.a);ctx.strokeStyle='rgba(180,221,139,.24)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-t.s,0);ctx.quadraticCurveTo(-t.s*.3,-t.s*.8,0,0);ctx.quadraticCurveTo(t.s*.35,-t.s*.7,t.s,0);ctx.stroke();ctx.restore()}
+ // garden edge
+ ctx.strokeStyle='#ffffff0a';ctx.lineWidth=3;ctx.strokeRect(12,12,W-24,H-24);
+}
+function drawFlowers(){
+ const count=Math.floor(W*H/36000)+5;
+ if(flowers.length<count){for(let i=flowers.length;i<count;i++){const x=rand(35,W-35),y=rand(95,H-50);flowers.push({x,y,r:rand(11,18),hue:rand(0,360)})}}
+ for(const f of flowers){ctx.save();ctx.translate(f.x,f.y);ctx.fillStyle='#387045';ctx.fillRect(-1,0,2,13);ctx.fillStyle='#71a85c';ctx.beginPath();ctx.ellipse(-4,7,5,2.5,-.4,0,Math.PI*2);ctx.fill();for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ctx.fillStyle=`hsl(${f.hue} 78% 77%)`;ctx.beginPath();ctx.ellipse(Math.cos(a)*f.r*.58,Math.sin(a)*f.r*.58,4,6,a,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#ffdc70';ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore()}
+}
+function drawBugs(){for(const b of bugs){if(!b.alive)continue;const bob=Math.sin(elapsed*4+b.phase)*4;ctx.save();ctx.translate(b.x,b.y+bob);ctx.shadowColor='#ffe57b';ctx.shadowBlur=17;ctx.fillStyle='#fff0a0';ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#fff9d9';ctx.beginPath();ctx.arc(-2,-2,b.r*.38,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d9ae4a';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-2,-b.r);ctx.quadraticCurveTo(-7,-b.r-5,-8,-b.r-7);ctx.moveTo(2,-b.r);ctx.quadraticCurveTo(7,-b.r-5,8,-b.r-7);ctx.stroke();ctx.restore()}}
+function drawFoot(){
+ const x=player.x,y=player.y;ctx.save();ctx.translate(x,y);ctx.rotate(player.face);
+ const scale=Math.min(1,W/650);const w=player.dash>0?39:34,h=player.dash>0?65:58;
+ ctx.globalAlpha=.22;ctx.fillStyle='#102b24';ctx.beginPath();ctx.ellipse(4,8,w*.74,h*.54,.12,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ // foot silhouette: toes at top, heel below, graphic/storybook styling
+ ctx.fillStyle=player.inv>0&&Math.floor(elapsed*16)%2?'#f4cba7':'#f0bd99';ctx.strokeStyle='#9f6b55';ctx.lineWidth=1.5;
+ ctx.beginPath();ctx.moveTo(-w*.36,-h*.19);ctx.bezierCurveTo(-w*.52,-h*.43,-w*.46,-h*.64,-w*.28,-h*.65);ctx.bezierCurveTo(-w*.12,-h*.67,-w*.09,-h*.52,0,-h*.52);ctx.bezierCurveTo(w*.1,-h*.61,w*.14,-h*.69,w*.29,-h*.62);ctx.bezierCurveTo(w*.44,-h*.55,w*.37,-h*.39,w*.34,-h*.23);ctx.bezierCurveTo(w*.53,h*.05,w*.48,h*.43,w*.26,h*.54);ctx.bezierCurveTo(w*.06,h*.65,-w*.16,h*.63,-w*.31,h*.48);ctx.bezierCurveTo(-w*.48,h*.32,-w*.52,h*.02,-w*.36,-h*.19);ctx.closePath();ctx.fill();ctx.stroke();
+ // subtle sole center highlight
+ ctx.fillStyle='#f6d2b2';ctx.beginPath();ctx.ellipse(0,5,w*.25,h*.28,.08,0,Math.PI*2);ctx.fill();
+ // toe creases
+ ctx.strokeStyle='#c68d70';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-w*.21,-h*.35);ctx.quadraticCurveTo(-w*.11,-h*.31,-w*.03,-h*.34);ctx.moveTo(w*.07,-h*.39);ctx.quadraticCurveTo(w*.17,-h*.34,w*.27,-h*.39);ctx.stroke();
+ // tiny ankle cuff / charm gives playful character styling
+ ctx.fillStyle='#d98070';rounded(-w*.3,h*.37,w*.6,7,3);ctx.fill();ctx.fillStyle='#ffe393';ctx.beginPath();ctx.arc(0,h*.45,3.2,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+function pop(x,y,color){puffs.push({x,y,life:.65,color})}
+function update(dt){elapsed+=dt;time=Math.max(0,time-dt);timeEl.textContent=Math.ceil(time);player.inv=Math.max(0,player.inv-dt);player.dash=Math.max(0,player.dash-dt);shake=Math.max(0,shake-dt*20);
+ let dx=(keys.ArrowRight||keys.d||touch.right?1:0)-(keys.ArrowLeft||keys.a||touch.left?1:0),dy=(keys.ArrowDown||keys.s||touch.down?1:0)-(keys.ArrowUp||keys.w||touch.up?1:0);let mag=Math.hypot(dx,dy);if(mag){dx/=mag;dy/=mag;player.face=Math.atan2(dx,-dy)}
+ let speed=player.dash?550:245;player.vx=dx*speed;player.vy=dy*speed;player.x=clamp(player.x+player.vx*dt,32,W-32);player.y=clamp(player.y+player.vy*dt,90,H-38);
+ if(mag){footstep+=dt*13;if(footstep>1){footstep=0;if(Math.random()<.35){pop(player.x+rand(-12,12),player.y+20,'#c7df9b')}}}
+ for(const b of bugs){if(!b.alive)continue;const d=Math.hypot(player.x-b.x,player.y-b.y);if(d<34){b.alive=false;score++;scoreEl.innerHTML=`${score} <span style="font-size:13px;color:#a8c9a7">/ 12</span>`;sound(550+score*38,.13,'sine');pop(b.x,b.y,'#ffec9a');if(score>=12){end(true);return}}
+ }
+ for(const f of flowers){const d=Math.hypot(player.x-f.x,player.y-f.y);if(d<24&&player.inv<=0&&player.dash<=0){player.inv=.75;shake=7;player.x=clamp(player.x-dx*23,32,W-32);player.y=clamp(player.y-dy*23,90,H-38);sound(145,.11,'triangle');pop(f.x,f.y,'#ffd3b3')}}
+ puffs=puffs.filter(p=>{p.life-=dt;return p.life>0});if(time<=0)end(false);
+}
+function draw(){ctx.save();if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));drawGround();drawFlowers();drawBugs();for(const p of puffs){ctx.globalAlpha=p.life/.65;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,5+(1-p.life/.65)*17,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;drawFoot();ctx.restore();}
+function loop(now){if(!playing)return;const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);draw();if(playing)requestAnimationFrame(loop)}
+window.addEventListener('resize',resize);resize();
+playBtn.addEventListener('click',()=>{if(won)sound(660,.1);start()});
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key]=true;if((e.key===' '||e.key==='Shift')&&playing&&player.dash<=0){player.dash=.22;sound(290,.08,'triangle')}});
+window.addEventListener('keyup',e=>keys[e.key]=false);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+document.querySelectorAll('.ctrl').forEach(btn=>{const dir=btn.dataset.dir;const down=e=>{e.preventDefault();touch[dir]=true;btn.classList.add('on')};const up=e=>{e.preventDefault();touch[dir]=false;btn.classList.remove('on')};btn.addEventListener('pointerdown',down);['pointerup','pointercancel','pointerleave'].forEach(ev=>btn.addEventListener(ev,up))});
+document.querySelector('.boost').addEventListener('pointerdown',e=>{e.preventDefault();if(playing&&player.dash<=0){player.dash=.22;sound(290,.08,'triangle')}});
+soundBtn.addEventListener('click',()=>{audioOn=!audioOn;soundBtn.textContent=`♪ Sound: ${audioOn?'On':'Off'}`;if(audioOn)sound(500,.08)});
+// Initial static scene and gentle firefly drift before the first round
+makeBugs(12);draw();
+})();
+</script>
+</body>
+</html>
