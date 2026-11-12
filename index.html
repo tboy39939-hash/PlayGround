@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#101a37" />
+<link rel="icon" href="data:," />
+<title>Colossal Steps</title>
+<style>
+  :root { color-scheme: dark; --ink:#f7f6ff; --mint:#79f4d0; --gold:#ffd36b; --panel:rgba(15,24,52,.78); }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#101a37; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); touch-action:none; }
+  #game { position:fixed; inset:0; }
+  canvas { display:block; width:100%; height:100%; }
+  .hud { position:fixed; z-index:2; inset: max(14px,env(safe-area-inset-top)) 14px auto; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; gap:10px; }
+  .brand { display:flex; align-items:center; gap:10px; padding:10px 14px 10px 10px; border:1px solid rgba(255,255,255,.13); border-radius:17px; background:var(--panel); box-shadow:0 10px 30px #050b1b55; backdrop-filter:blur(12px); }
+  .logo { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:linear-gradient(145deg,#ffd66f,#ff9d67); font-size:23px; }
+  .brand strong { display:block; font-size:14px; letter-spacing:.12em; line-height:1.15; }
+  .brand small { display:block; color:#aeb8d9; font-size:10px; margin-top:4px; letter-spacing:.08em; }
+  .stats { display:flex; gap:8px; }
+  .stat { min-width:78px; padding:10px 13px; border:1px solid rgba(255,255,255,.13); border-radius:15px; background:var(--panel); text-align:center; backdrop-filter:blur(12px); }
+  .stat span { display:block; color:#9eacd2; font-size:9px; font-weight:800; letter-spacing:.14em; }
+  .stat b { display:block; margin-top:3px; font-size:19px; line-height:1; }
+  .objective { position:fixed; z-index:2; top:88px; left:50%; transform:translateX(-50%); padding:9px 15px; border:1px solid rgba(255,255,255,.11); border-radius:30px; background:rgba(11,19,43,.62); color:#d5defa; font-size:12px; letter-spacing:.015em; white-space:nowrap; text-align:center; backdrop-filter:blur(9px); }
+  .objective b { color:var(--mint); }
+  .controls { position:fixed; z-index:3; inset:auto 0 max(18px,env(safe-area-inset-bottom)) 0; display:flex; justify-content:center; align-items:flex-end; gap:clamp(10px,4vw,36px); padding:0 14px; pointer-events:none; }
+  .pad { display:flex; gap:10px; pointer-events:auto; }
+  button { border:1px solid rgba(255,255,255,.2); color:white; font:inherit; cursor:pointer; touch-action:manipulation; }
+  .move { width:clamp(58px,15vw,76px); height:clamp(58px,15vw,76px); border-radius:22px; background:rgba(16,26,55,.82); box-shadow:0 8px 24px #04091655; font-size:25px; backdrop-filter:blur(10px); }
+  .move:active { transform:scale(.94); background:#34436b; }
+  .stomp { min-width:clamp(140px,34vw,190px); height:clamp(64px,16vw,80px); border:0; border-radius:24px; background:linear-gradient(135deg,#ffcf67,#ff8f69); color:#381f3e; box-shadow:0 8px 28px #ff9a6055, inset 0 2px 0 #fff8; font-weight:950; font-size:15px; letter-spacing:.1em; pointer-events:auto; }
+  .stomp span { font-size:22px; margin-right:6px; vertical-align:-2px; }
+  .stomp:active { transform:scale(.96); filter:brightness(1.12); }
+  .hint { position:fixed; z-index:2; bottom:105px; left:50%; transform:translateX(-50%); color:#b5c0df; font-size:11px; text-shadow:0 1px 5px #000; white-space:nowrap; pointer-events:none; }
+  .toast { position:fixed; z-index:4; left:50%; top:28%; transform:translate(-50%,-12px); padding:11px 18px; border-radius:30px; background:#152345dd; border:1px solid #ffffff27; color:#fff; font-weight:850; letter-spacing:.04em; opacity:0; transition:.22s ease; pointer-events:none; box-shadow:0 8px 28px #0004; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  .overlay { position:fixed; z-index:5; inset:0; display:grid; place-items:center; padding:22px; background:linear-gradient(180deg,rgba(8,13,31,.18),rgba(8,13,31,.75)); }
+  .card { width:min(440px,100%); padding:clamp(24px,6vw,38px); text-align:center; border:1px solid #ffffff26; border-radius:28px; background:linear-gradient(145deg,rgba(27,42,79,.94),rgba(15,23,49,.96)); box-shadow:0 24px 80px #020613aa; backdrop-filter:blur(18px); }
+  .eyebrow { color:var(--mint); font-weight:900; letter-spacing:.2em; font-size:10px; }
+  .card h1 { margin:11px 0 10px; font-size:clamp(34px,10vw,52px); line-height:.97; letter-spacing:-.055em; }
+  .card p { max-width:340px; margin:0 auto 22px; color:#bac5e3; font-size:14px; line-height:1.55; }
+  .card .start { width:100%; height:56px; border:0; border-radius:17px; color:#272448; background:linear-gradient(110deg,#83f2d2,#ffd36b); font-weight:950; font-size:15px; letter-spacing:.08em; box-shadow:0 8px 25px #79f4d055; }
+  .keys { margin-top:14px; color:#91a0c4; font-size:11px; }
+  .hidden { display:none !important; }
+  @media(max-width:560px) { .brand { padding:8px; gap:8px; } .logo{width:34px;height:34px}.brand strong{font-size:11px}.brand small{font-size:8px}.stat{min-width:60px;padding:8px 9px}.stat b{font-size:17px}.objective{top:76px;font-size:10px;padding:8px 11px}.hint{bottom:100px;font-size:10px} }
+  @media(orientation:landscape) and (max-height:520px) { .hud{inset:8px 12px auto}.brand{padding:6px 10px}.logo{width:30px;height:30px}.objective{top:60px}.controls{bottom:10px}.move{width:56px;height:56px;border-radius:17px}.stomp{height:58px}.hint{bottom:72px} }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud">
+  <div class="brand"><div class="logo">👟</div><div><strong>COLOSSAL STEPS</strong><small>THE FRIENDLY GIANTESS</small></div></div>
+  <div class="stats"><div class="stat"><span>BLOCKS</span><b id="score">00</b></div><div class="stat"><span>TIME</span><b id="time">60</b></div></div>
+</div>
+<div class="objective">Stomp <b>vacant blocks</b> · Keep the blue shelters safe!</div>
+<div class="toast" id="toast">NICE STEP!</div>
+<div class="hint" id="hint">← → to move · SPACE to stomp</div>
+<div class="controls">
+  <div class="pad"><button class="move" id="left" aria-label="Move left">‹</button><button class="move" id="right" aria-label="Move right">›</button></div>
+  <button class="stomp" id="stomp"><span>✦</span> STOMP!</button>
+</div>
+<div class="overlay" id="overlay">
+  <div class="card"><div class="eyebrow">A TINY CITY, A VERY BIG HEART</div><h1 id="title">Colossal<br>Steps</h1><p id="message">Help the city make room for a brighter tomorrow! Choose a lane and stomp the <b>empty orange-roof blocks</b>. Blue-roof shelters are full of neighbors—leave them standing.</p><button class="start" id="start">LET'S STEP IN</button><div class="keys">Touch controls · Keyboard arrows + Space</div></div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+
+const mount=document.querySelector('#game');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.8)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.12; mount.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#a9d8e9'); scene.fog=new THREE.Fog('#a9d8e9',19,43);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,100); camera.position.set(0,12.5,20); camera.lookAt(0,1.2,-1.2);
+scene.add(new THREE.HemisphereLight('#e7f7ff','#59618b',2.2));
+const sun=new THREE.DirectionalLight('#fff1cf',3.1); sun.position.set(-7,13,7); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); sun.shadow.camera.left=-13; sun.shadow.camera.right=13; sun.shadow.camera.top=14; sun.shadow.camera.bottom=-14; scene.add(sun);
+const mat=(color,roughness=.78)=>new THREE.MeshStandardMaterial({color,roughness});
+const groundMat=mat('#657a9d'); const roadMat=mat('#394a71'); const lineMat=mat('#a3b8c5');
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(34,52),groundMat); ground.rotation.x=-Math.PI/2; ground.position.set(0,-.16,-5); ground.receiveShadow=true; scene.add(ground);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(15,38),roadMat); road.rotation.x=-Math.PI/2; road.position.set(0,-.145,-4); road.receiveShadow=true; scene.add(road);
+for(let x of [-2.5,2.5]){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(.055,35),lineMat);stripe.rotation.x=-Math.PI/2;stripe.position.set(x,-.13,-4);scene.add(stripe)}
+// Distant pastel skyline
+for(let i=0;i<24;i++){let x=(i%2?1:-1)*(8+Math.random()*9),z=-16+Math.random()*13,w=1.4+Math.random()*2.2,h=2+Math.random()*7;let b=new THREE.Mesh(new THREE.BoxGeometry(w,h,1.8),mat(['#87a9bd','#c5b5c9','#8bbfae','#e8bd91'][i%4]));b.position.set(x,h/2-.1,z);b.castShadow=true;scene.add(b);}
+// Little parks and trees on the verges
+const treeTrunk=mat('#76596a'), foliage=[mat('#78bca9'),mat('#97d39f'),mat('#f2c583')];
+for(let i=0;i<20;i++){const side=i%2?1:-1,z=-17+i*1.45,x=side*(8.1+Math.random()*1.4);let trunk=new THREE.Mesh(new THREE.CylinderGeometry(.13,.2,.9,7),treeTrunk);trunk.position.set(x,.35,z);trunk.castShadow=true;scene.add(trunk);let crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.6+Math.random()*.22,1),foliage[i%3]);crown.position.set(x,1.15,z);crown.castShadow=true;scene.add(crown);}
+const laneX=[-4.1,0,4.1];
+const buildingMats=['#f2a777','#73b8a8','#a98bcc','#e5c76f','#72a8d7','#df8d9d'];
+const buildings=[];
+function makeBuilding(lane,z,index){
+ const g=new THREE.Group(); const height=1.2+Math.random()*1.8,w=1.25+Math.random()*.38,d=1.15;
+ const base=mat(buildingMats[Math.floor(Math.random()*buildingMats.length)]); const body=new THREE.Mesh(new THREE.BoxGeometry(w,height,d),base);body.position.y=height/2;body.castShadow=true;body.receiveShadow=true;g.add(body);
+ const roofColor=index==='safe'?'#54d4cb':'#ffb25f'; const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.13,.22,d+.13),mat(roofColor));roof.position.y=height+.11;roof.castShadow=true;g.add(roof);
+ const trim=new THREE.Mesh(new THREE.BoxGeometry(w+.04,.08,d+.04),mat('#fff0ce'));trim.position.y=.32;g.add(trim);
+ const winmat=mat('#fff2b5',.32);for(let y=.62;y<height-.05;y+=.55)for(let x of [-w*.27,w*.27]){let win=new THREE.Mesh(new THREE.BoxGeometry(.21,.26,.035),winmat);win.position.set(x,y,d/2+.02);g.add(win)}
+ // rooftop symbol: a clear blue shelter marker, or a glowing target star
+ if(index==='safe'){
+  const badge=new THREE.Mesh(new THREE.TorusGeometry(.23,.055,8,18),mat('#e6fffa',.35));badge.position.set(0,height+.34,0);badge.rotation.x=Math.PI/2;g.add(badge);
+  const cross=new THREE.Mesh(new THREE.BoxGeometry(.08,.31,.06),mat('#e6fffa'));cross.position.set(0,height+.35,0);g.add(cross);const cross2=new THREE.Mesh(new THREE.BoxGeometry(.31,.08,.06),mat('#e6fffa'));cross2.position.set(0,height+.35,0);g.add(cross2);
+ }else{
+  const star=new THREE.Mesh(new THREE.OctahedronGeometry(.22),mat('#fff1b1',.3));star.position.set(0,height+.37,0);g.add(star);star.userData.twinkle=true;
+ }
+ g.position.set(laneX[lane],0,z);scene.add(g);let o={group:g,lane,type:index,height,hit:false,baseY:0};buildings.push(o);return o;
+}
+// Rows move toward the giantess. Each consists of one vacant target and occasional shelters.
+const rows=[];for(let r=0;r<5;r++){
+ let safeLane=Math.random()<.54?Math.floor(Math.random()*3):-1;let targetLane=Math.floor(Math.random()*3);if(targetLane===safeLane)targetLane=(targetLane+1+Math.floor(Math.random()*2))%3;
+ let row={z:-12+r*4.4,items:[],done:false};for(let l=0;l<3;l++){if(l===safeLane||l===targetLane)row.items.push(makeBuilding(l,row.z,l===safeLane?'safe':'target'));}rows.push(row);
+}
+// The giantess's playful sneaker/foot, built from soft rounded shapes
+const foot=new THREE.Group();scene.add(foot);foot.position.set(0,.14,4.0);
+const shoe=new THREE.Mesh(new THREE.SphereGeometry(1,28,20),mat('#ffca69',.48));shoe.scale.set(1.12,.42,1.65);shoe.position.set(0,.42,-.22);shoe.castShadow=true;foot.add(shoe);
+const toeCap=new THREE.Mesh(new THREE.SphereGeometry(1,24,18),mat('#ff9f70',.46));toeCap.scale.set(1.11,.38,.72);toeCap.position.set(0,.48,-1.14);toeCap.castShadow=true;foot.add(toeCap);
+const sole=new THREE.Mesh(new THREE.CapsuleGeometry(.51,.95,6,16),mat('#754d78'));sole.rotation.x=Math.PI/2;sole.scale.set(1,.38,1);sole.position.set(0,.16,-.18);foot.add(sole);
+const strap=new THREE.Mesh(new THREE.BoxGeometry(1.68,.09,.19),mat('#fff0c7',.36));strap.position.set(0,.79,-.28);foot.add(strap);
+const emblem=new THREE.Mesh(new THREE.TorusGeometry(.12,.035,8,18),mat('#fff0c7',.38));emblem.position.set(.89,.48,.2);emblem.rotation.y=Math.PI/2;foot.add(emblem);
+// Shadow impact ring
+const ring=new THREE.Mesh(new THREE.TorusGeometry(1.45,.045,8,52),new THREE.MeshBasicMaterial({color:'#fff0a3',transparent:true,opacity:.75}));ring.rotation.x=Math.PI/2;ring.position.set(0,.03,3.8);ring.visible=false;scene.add(ring);
+const particles=[];
+function burst(x,z,color){for(let i=0;i<18;i++){let m=new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.18,.12+Math.random()*.18,.12+Math.random()*.18),mat(color));m.position.set(x,.7,z);m.castShadow=true;scene.add(m);particles.push({mesh:m,v:new THREE.Vector3((Math.random()-.5)*5,2+Math.random()*4,(Math.random()-.5)*5),life:.8+Math.random()*.7});}}
+let lane=1,score=0,time=60,playing=false,anim=0,stompPhase=0,toastTimer=0;
+const scoreEl=document.querySelector('#score'),timeEl=document.querySelector('#time'),overlay=document.querySelector('#overlay'),toast=document.querySelector('#toast');
+function showToast(text){toast.textContent=text;toast.classList.add('show');toastTimer=1.05;}
+function startGame(){score=0;time=60;scoreEl.textContent='00';timeEl.textContent='60';playing=true;overlay.classList.add('hidden');document.querySelector('#hint').textContent=innerWidth<700?'Tap lanes · stomp when a block reaches your foot':'← → to move · SPACE to stomp';}
+function move(dir){if(!playing)return;lane=Math.max(0,Math.min(2,lane+dir));}
+function stomp(){if(!playing||stompPhase>0)return;stompPhase=1;
+ // Check nearest incoming building in this lane at the impact line.
+ let candidates=[];for(let row of rows)for(let b of row.items)if(b.lane===lane&&!b.hit)candidates.push(b);
+ candidates.sort((a,b)=>Math.abs(a.group.position.z-2.5)-Math.abs(b.group.position.z-2.5));const b=candidates[0];
+ if(b&&Math.abs(b.group.position.z-2.6)<2.05){b.hit=true;if(b.type==='safe'){showToast('SHELTER SAFE! NICE SAVE');}else{score++;scoreEl.textContent=String(score).padStart(2,'0');showToast(['NICE STEP!','BRILLIANT!','CITY GLOW!'][Math.floor(Math.random()*3)]);burst(laneX[lane],b.group.position.z,'#ffd168');b.group.userData.crumble=1;}}
+ else {showToast('A LITTLE TOO SOON!');}
+ ring.position.x=laneX[lane];ring.scale.set(.4,.4,.4);ring.visible=true;
+}
+document.querySelector('#start').addEventListener('click',startGame);document.querySelector('#left').addEventListener('pointerdown',e=>{e.preventDefault();move(-1)});document.querySelector('#right').addEventListener('pointerdown',e=>{e.preventDefault();move(1)});document.querySelector('#stomp').addEventListener('pointerdown',e=>{e.preventDefault();stomp()});
+addEventListener('keydown',e=>{if(e.code==='ArrowLeft'||e.code==='KeyA')move(-1);if(e.code==='ArrowRight'||e.code==='KeyD')move(1);if(e.code==='Space'){e.preventDefault();stomp()}if(e.code==='Enter'&&!playing)startGame()});
+let clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.035);anim+=dt;
+ if(playing){time=Math.max(0,time-dt);timeEl.textContent=String(Math.ceil(time)).padStart(2,'0');if(time<=0){playing=false;document.querySelector('#title').innerHTML='City<br>Champion!';document.querySelector('#message').innerHTML=`You made <b>${score} brilliant steps</b> and kept every shelter safe. The city is ready to bloom!`;document.querySelector('#start').textContent='PLAY AGAIN';overlay.classList.remove('hidden')}
+  for(let row of rows){row.z+=dt*(2.15+Math.min(score*.025,.65));for(const b of row.items){b.group.position.z=row.z;if(b.group.userData.crumble){let c=b.group.userData.crumble;c-=dt*1.8;b.group.userData.crumble=c;b.group.scale.y=Math.max(.06,c);b.group.position.y=(1-c)*-.18;if(c<=0){scene.remove(b.group);b.group.userData.crumble=0;}}}
+   if(row.z>7){row.z=-13;row.done=false;let safeLane=Math.random()<.48?Math.floor(Math.random()*3):-1;let targetLane=Math.floor(Math.random()*3);if(targetLane===safeLane)targetLane=(targetLane+1+Math.floor(Math.random()*2))%3;for(const b of row.items)scene.remove(b.group);row.items=[];for(let l=0;l<3;l++){if(l===safeLane||l===targetLane)row.items.push(makeBuilding(l,row.z,l===safeLane?'safe':'target'));}}
+  }
+ }
+ // ease giant sneaker into lane; little bounce on command
+ foot.position.x+=(laneX[lane]-foot.position.x)*Math.min(1,dt*9);foot.position.y=.14+Math.sin(anim*2.1)*.045;
+ if(stompPhase>0){stompPhase+=dt*3.6;if(stompPhase<1.28)foot.position.y=.14+Math.sin((stompPhase/1.28)*Math.PI)*1.25;else stompPhase=0;}
+ ring.rotation.z+=dt*.35;if(ring.visible){ring.scale.x+=(1.3-ring.scale.x)*dt*6;ring.scale.y=ring.scale.x;ring.material.opacity=Math.max(0,ring.material.opacity-dt*1.2);if(ring.material.opacity<=.02){ring.visible=false;ring.material.opacity=.75}}
+ for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.v.y-=dt*8;p.mesh.position.addScaledVector(p.v,dt);p.mesh.rotation.x+=dt*4;p.mesh.rotation.z+=dt*3;if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1)}}
+ if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)toast.classList.remove('show')}
+ camera.position.x+=(laneX[lane]*.09-camera.position.x)*dt*1.8;camera.lookAt(camera.position.x*.16,1.1,-1.2);
+ renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8))});
+</script>
+</body>
+</html>
